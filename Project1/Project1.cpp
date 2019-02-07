@@ -3,7 +3,9 @@
 using namespace std;
 
 
-
+/*
+a class representing a value in a specific row and column of a matrix.
+*/
 class SparseRow
 {
 protected:
@@ -100,7 +102,9 @@ void SparseRow::setValue(int val)
 	value = val;
 }
 
-
+/*
+a class representing a matrix with only a few values that differ from the common value.
+*/
 class SparseMatrix
 {
 protected:
@@ -176,19 +180,127 @@ ostream& operator<< (ostream& s, const SparseMatrix& thisOne)
 // transposes the matrix
 SparseMatrix* SparseMatrix::Transpose()
 {
-	return new SparseMatrix();
+	SparseRow* temp = new SparseRow[noNonSparseValues];
+	for (int i = 0; i < noNonSparseValues; i++)
+	{
+		temp[i].setRow(myMatrix[i].getColumn());
+		temp[i].setColumn(myMatrix[i].getRow());
+		temp[i].setValue(myMatrix[i].getValue());
+	}
+
+	SparseMatrix *newMatrix = new SparseMatrix(noCols, noRows, commonValue, noNonSparseValues);
+	newMatrix->setMyMatrix(temp);
+	//newMatrix->displayMatrix(); // check line
+	return newMatrix;
 }
 
 // multiplies two matrices
 SparseMatrix* SparseMatrix::Multiply(SparseMatrix& M)
 {
-	return new SparseMatrix();
+	SparseRow* A = myMatrix;
+	SparseRow* B = M.getMyMatrix();
+	SparseMatrix *temp = new SparseMatrix(noRows, M.getNoCols(), commonValue, 0);
+
+	int noNSV = noNonSparseValues;
+	int mNSV = M.getNoNonSparseValues();
+	int length = noNSV + mNSV;
+
+	for (int i = 0; i < noRows; i++)
+	{
+		for (int j = 0; j < noCols; j++)
+		{
+
+			int val = 0;
+
+			for (int k = 0; k < noNSV; k++)
+			{
+
+				for (int h = 0; h < mNSV; h++)
+				{
+
+					if ((A[k].getRow() == i) && (B[h].getColumn() == j))
+					{
+
+						if (A[k].getColumn() == B[h].getRow())
+						{
+							val += A[k].getValue() * B[h].getValue();
+							
+						}
+
+					}
+
+				}
+
+			}
+
+			(*temp).myMatrix[(*temp).noNonSparseValues].setRow(i);
+			(*temp).myMatrix[(*temp).noNonSparseValues].setColumn(j);
+			//(*temp).myMatrix[(*temp).noNonSparseValues++].setValue(val);
+
+		}
+	}
+	temp->displayMatrix();
+	return temp;
 }
 
 // adds two matrices
 SparseMatrix* SparseMatrix::Add(SparseMatrix& M)
 {
-	return new SparseMatrix();
+	
+	int noNSV = noNonSparseValues;
+	int mNSV = M.getNoNonSparseValues();
+	int length = noNSV + mNSV;
+
+	SparseMatrix* temp = new SparseMatrix(noRows, noCols, commonValue, noNSV + mNSV);
+
+	int i = 0;
+	int j;
+	bool found;
+	int valueToAdd;
+
+	bool* mArray = new bool[mNSV];
+	for (int k = 0; k < mNSV; k++)
+	{
+		mArray[k] = false;
+	}
+
+	while (i < noNSV)
+	{
+		j = 0;
+		found = false;
+		valueToAdd = 0;
+
+		(*temp).myMatrix[(*temp).noNonSparseValues].setRow(myMatrix[i].getRow());
+		(*temp).myMatrix[(*temp).noNonSparseValues].setColumn(myMatrix[i].getColumn());
+
+		while ((j < mNSV) && (!found)) {
+			if ((myMatrix[i].getRow() == M.myMatrix[j].getRow()) &&
+				(myMatrix[i].getColumn() == M.myMatrix[j].getColumn()))
+			{
+				found = true;
+				valueToAdd = M.myMatrix[j].getValue();
+				mArray[j] = true;
+			}
+			else
+				j++;
+		}
+
+		(*temp).myMatrix[(*temp).noNonSparseValues++].setValue(myMatrix[i].getValue() + valueToAdd);
+		i++;
+	}
+
+	for (int k = 0; k < mNSV; k++)
+	{
+		if (!mArray[k])
+		{
+			(*temp).myMatrix[(*temp).noNonSparseValues].setRow(myMatrix[k].getRow());
+			(*temp).myMatrix[(*temp).noNonSparseValues].setColumn(myMatrix[k].getColumn());
+			//(*temp).myMatrix[(*temp).noNonSparseValues++].setValue(myMatrix[k].getValue());
+		}
+	}
+
+
+	return temp;
 }
 
 // displays SparseMatrix data
@@ -268,18 +380,88 @@ void SparseMatrix::setMyMatrix(SparseRow* M)
 
 int main()
 {
-	SparseRow *first = new SparseRow(0, 2, 900);
-	SparseRow *second = new SparseRow(1, 3, 450);
-	SparseRow *third = new SparseRow(3, 0, 127);
-	SparseRow* temp = new SparseRow[3];
-	temp[0] = *first;
-	temp[1] = *second;
-	temp[2] = *third;
-
-	SparseMatrix *test = new SparseMatrix(4, 4, 0, 3);
-	test->setMyMatrix(temp);
-	test->display();
+	SparseRow *first = new SparseRow(0, 0, 2);
+	SparseRow *second = new SparseRow(0, 1, 2);
+	SparseRow *third = new SparseRow(0, 2, 2);
+	SparseRow *fourth = new SparseRow(2, 1, 7);
+	SparseRow* temp1 = new SparseRow[3];
+	SparseRow* temp2 = new SparseRow[3];
+	temp1[0] = *first;
+	temp1[1] = *second;
+	temp1[2] = *third;
+	temp2[0] = *first;
+	temp2[1] = *second;
+	temp2[2] = *fourth;
+	SparseMatrix *test1 = new SparseMatrix(3, 3, 0, 3);
+	SparseMatrix *test2 = new SparseMatrix(3, 3, 0, 3);
+	test1->setMyMatrix(temp1);
+	test2->setMyMatrix(temp2);
+	
+	//test1->display();
 	cout << endl;
-	test->displayMatrix();
+	test2->displayMatrix();
 
+	SparseMatrix* temp = (*test1).Transpose();
+	//(*temp).display();
+	cout << endl;
+	//(*temp).displayMatrix();
+
+	temp = (*test1).Add((*test2));
+	(*temp).display();
+	cout << endl;
+	(*temp).displayMatrix();
+
+	/*
+	temp = (*test1).Multiply((*test1));
+	(*temp).display();
+	cout << endl;
+	(*temp).displayMatrix();
+	*/
+
+	/*
+	int n, m, cv, noNSV;
+	SparseMatrix* temp;
+
+	cin >> n >> m >> cv >> noNSV;
+	SparseMatrix* firstOne = new SparseMatrix(n, m, cv, noNSV);
+
+	//Write the Statements to read in the first matrix
+
+	cin >> n >> m >> cv >> noNSV;
+	SparseMatrix* secondOne = new SparseMatrix(n, m, cv, noNSV);
+
+	//Write the Statements to read in the second matrix
+
+	cout << "First one in sparse matrix format" << endl;
+	(*firstOne).display();
+
+	cout << "First one in normal matrix format" << endl;
+	(*firstOne).displayMatrix();
+
+	cout << "Second one in sparse matrix format" << endl;
+	(*secondOne).display();
+
+	cout << "Second one in normal matrix format" << endl;
+	(*secondOne).displayMatrix();
+
+
+
+	cout << "After Transpose first one in normal format" << endl;
+	temp = (*firstOne).Transpose();
+	(*temp).displayMatrix();
+
+	cout << "After Transpose second one in normal format" << endl;
+	temp = (*secondOne).Transpose();
+	(*temp).displayMatrix();
+
+
+	cout << "Multiplication of matrices in sparse matrix form:" << endl;
+	temp = (*secondOne).Multiply(*firstOne);
+	(*temp).display();
+
+	cout << "Addition of matrices in sparse matrix form:" << endl;
+	temp = (*secondOne).Add(*firstOne);
+	(*temp).display();
+
+	*/
 }
